@@ -1,0 +1,58 @@
+# ============================================================
+# El Códice del Narrador — Backend Dependencies
+# Python 3.11+
+# ============================================================
+
+# ── Web Framework ─────────────────────────────────────────
+fastapi==0.115.5
+uvicorn[standard]==0.32.1        # ASGI server con soporte WebSockets y hot-reload
+
+# ── Base de Datos ──────────────────────────────────────────
+sqlalchemy==2.0.36               # ORM async con soporte JSONB nativo
+asyncpg==0.30.0                  # Driver async PostgreSQL (Supabase)
+alembic==1.14.0                  # Migraciones de base de datos
+
+# ── Validación y Schemas ───────────────────────────────────
+pydantic==2.10.3                 # Validación de datos (v2 — breaking changes vs v1)
+pydantic-settings==2.6.1         # Gestión de configuración desde .env
+
+# ── Autenticación JWT ──────────────────────────────────────
+python-jose[cryptography]==3.3.0  # Decodificación y validación de JWT
+httpx==0.27.2                    # HTTP client async para fetch de JWKS
+cryptography==43.0.3             # Backend criptográfico
+
+# ── IA — LangChain Core ───────────────────────────────────
+langchain==0.3.9
+langchain-core==0.3.21
+langchain-community==0.3.9       # Integraciones (Chroma, HuggingFace, Groq, Gemini)
+
+# ── IA — Vector Store ─────────────────────────────────────
+chromadb==0.5.20                 # Vector DB local para RAG
+sentence-transformers==3.3.1     # Embeddings locales (all-MiniLM-L6-v2)
+
+# ── IA — LLM Providers ────────────────────────────────────
+groq==0.11.0                     # Cliente Groq API (LLaMA 3, Mixtral)
+google-generativeai==0.8.3       # Cliente Google Gemini API
+ollama==0.4.4                    # Cliente Ollama (modelos locales)
+
+# ── IA — NLP Auxiliar ─────────────────────────────────────
+spacy==3.8.3                     # NLP para extracción de entidades (Bitácora)
+# Instalar modelo español: python -m spacy download es_core_news_sm
+
+# ── Utilidades ─────────────────────────────────────────────
+python-multipart==0.0.17         # Soporte form data y file upload en FastAPI
+python-dotenv==1.0.1             # Carga de .env en desarrollo
+tenacity==9.0.0                  # Retries con backoff exponencial
+structlog==24.4.0                # Logging estructurado (JSON-friendly)
+rich==13.9.4                     # Output bonito en consola (dev)
+
+# ── Testing ────────────────────────────────────────────────
+pytest==8.3.4
+pytest-asyncio==0.24.0
+httpx==0.27.2                    # Client HTTP para tests de FastAPI
+factory-boy==3.3.1               # Factories para datos de test
+
+# ── Dev Tools ─────────────────────────────────────────────
+ruff==0.8.3                      # Linter + formatter (reemplaza black + flake8)
+mypy==1.13.0                     # Type checking
+pre-commit==4.0.1                # Git hooks

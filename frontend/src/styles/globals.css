@@ -1,0 +1,177 @@
+/*
+ * globals.css — Design tokens y base styles
+ * El Códice del Narrador — Gothic-Punk Modern UI
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────
+   Design Tokens — CSS Custom Properties
+   ───────────────────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --bg-root:        #121212;
+  --bg-container:   #1a1a1a;
+  --bg-elevated:    #242424;
+  --bg-overlay:     rgba(18, 18, 18, 0.95);
+
+  /* Text */
+  --text-primary:   #e8e6e1;
+  --text-secondary: #a09890;
+  --text-muted:     #6b6560;
+  --text-inverse:   #121212;
+
+  /* Ghost Borders */
+  --border-ghost:        rgba(232, 230, 225, 0.08);
+  --border-ghost-hover:  rgba(232, 230, 225, 0.16);
+  --border-ghost-active: rgba(232, 230, 225, 0.28);
+
+  /* Accents */
+  --accent-blood:   #8b0000;
+  --accent-blood-light: #a50000;
+  --accent-silver:  #c0c0c0;
+  --accent-amber:   #b8860b;
+  --accent-green:   #2d5a27;  /* Para estados "activo" / "vivo" */
+
+  /* Semánticos */
+  --color-success:  #2d6a4f;
+  --color-warning:  #b8860b;
+  --color-error:    #8b0000;
+  --color-info:     #1a4a6e;
+
+  /* Spacing base */
+  --space-xs:  4px;
+  --space-sm:  8px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  40px;
+  --space-2xl: 64px;
+
+  /* Typography */
+  --font-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-sans:  'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono:  'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+  /* Radius */
+  --radius-sm:  2px;
+  --radius-md:  4px;
+  --radius-lg:  8px;
+
+  /* Transitions */
+  --transition-fast:   150ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow:   350ms ease;
+
+  /* Shadows */
+  --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md:  0 4px 16px rgba(0, 0, 0, 0.6);
+  --shadow-lg:  0 8px 32px rgba(0, 0, 0, 0.7);
+  --shadow-glow-blood: 0 0 20px rgba(139, 0, 0, 0.3);
+}
+
+/* ─────────────────────────────────────────────
+   Base Reset
+   ───────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background-color: var(--bg-root);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ─────────────────────────────────────────────
+   Scrollbar personalizado (Webkit)
+   ───────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-root);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-ghost-hover);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(232, 230, 225, 0.3);
+}
+
+/* ─────────────────────────────────────────────
+   Typography helpers
+   ───────────────────────────────────────────── */
+.font-serif   { font-family: var(--font-serif); }
+.font-sans    { font-family: var(--font-sans); }
+.font-mono    { font-family: var(--font-mono); }
+
+/* ─────────────────────────────────────────────
+   Ghost UI — Component classes base
+   (Tailwind @layer components)
+   ───────────────────────────────────────────── */
+@layer components {
+  /* Ghost Card */
+  .ghost-card {
+    @apply bg-[#1a1a1a] rounded-sm;
+    border: 1px solid var(--border-ghost);
+    transition: border-color var(--transition-normal);
+  }
+  .ghost-card:hover {
+    border-color: var(--border-ghost-hover);
+  }
+
+  /* Ghost Button */
+  .ghost-btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-sm;
+    @apply bg-transparent text-[#e8e6e1] cursor-pointer;
+    border: 1px solid rgba(232, 230, 225, 0.2);
+    font-family: var(--font-sans);
+    transition: all var(--transition-normal);
+  }
+  .ghost-btn:hover {
+    border-color: var(--accent-blood);
+    background-color: rgba(139, 0, 0, 0.12);
+    color: #f0eeea;
+  }
+  .ghost-btn:active {
+    background-color: rgba(139, 0, 0, 0.2);
+  }
+  .ghost-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Ghost Input */
+  .ghost-input {
+    @apply w-full px-3 py-2 text-sm bg-transparent rounded-sm;
+    color: var(--text-primary);
+    border: 1px solid var(--border-ghost);
+    font-family: var(--font-sans);
+    outline: none;
+    transition: border-color var(--transition-fast);
+  }
+  .ghost-input:focus {
+    border-color: var(--border-ghost-active);
+  }
+  .ghost-input::placeholder {
+    color: var(--text-muted);
+  }
+}
