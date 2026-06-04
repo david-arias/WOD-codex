@@ -1,14 +1,12 @@
 # 📜 HANDOFF.MD — El Códice del Narrador
-> **Bitácora Viva del Proyecto** · Actualizado por el 📝 Documentador Técnico  
-> **Versión:** 0.1.0 · **Fecha:** 2026-06-04 · **Fase Actual:** Fase 1 — Fundación
+> **Bitácora Viva del Proyecto** · Actualizado por el 📝 Documentador Técnico
+> **Versión:** 0.3.1 · **Fecha:** 2026-06-04 · **Fase Actual:** Fase 4 — IA & Seed de Reglas
 
 ---
 
 ## 🗺️ Resumen Ejecutivo
 
-**El Códice del Narrador** es una aplicación web SaaS diseñada para Directores de Juego (Narradores) del sistema de rol **Mundo de Tinieblas**, cubriendo las ediciones 20 Aniversario: **V20** (Vampiro), **W20** (Hombre Lobo) y **M20** (Mago).
-
-El sistema actúa como asistente integral de sesión: gestiona crónicas, genera PNJs con fichas completas, ofrece una wiki consultable de reglas oficiales, y permite a la IA interpretar dudas mecánicas complejas basándose exclusivamente en la base de datos estructurada (nunca en memoria de entrenamiento).
+**El Códice del Narrador** es una aplicación web SaaS para Directores de Juego del sistema de rol **Mundo de Tinieblas**, cubriendo las ediciones 20 Aniversario: **V20** (Vampiro), **W20** (Hombre Lobo) y **M20** (Mago). Stack 100% gratuito: React + FastAPI + Supabase + Groq/Gemini.
 
 ---
 
@@ -18,193 +16,247 @@ El sistema actúa como asistente integral de sesión: gestiona crónicas, genera
 ┌─────────────────────────────────────────────────────────────────┐
 │                        CLIENTE (Browser)                        │
 │  React 18 + Vite · Tailwind CSS · Zustand · React Router DOM   │
+│         Gothic-Punk Modern Design System (design.md)            │
 │                    Alojado en Vercel (Free)                     │
 └───────────────────────────┬─────────────────────────────────────┘
-                            │ HTTPS / REST + JWT
+                            │ HTTPS · /api/v1/* · JWT Bearer
 ┌───────────────────────────▼─────────────────────────────────────┐
-│                     BACKEND (FastAPI)                           │
-│            Python 3.11+ · SQLAlchemy · Pydantic v2             │
-│          JWT validation directa con clave pública Supabase      │
-│                  Ejecuta local / Free Tier                      │
-└──────────┬────────────────────────────────────────┬─────────────┘
-           │ SQLAlchemy ORM                         │ LangChain
-┌──────────▼──────────┐                  ┌──────────▼─────────────┐
-│   SUPABASE          │                  │   CAPA DE IA           │
-│   PostgreSQL        │                  │   ChromaDB (Local)     │
-│   Auth (JWT)        │                  │   LangChain + RAG      │
-│   Storage (assets)  │                  │   Groq / Gemini /      │
-│   Row Level Security│                  │   Ollama (OpenSource)  │
-└─────────────────────┘                  └────────────────────────┘
+│                     BACKEND (FastAPI 0.2.0)                     │
+│     core/config.py · db/database.py · api/dependencies.py      │
+│     Routers: /chronicles · /characters · /gamerules             │
+│          JWT validado contra SUPABASE_JWT_SECRET (HS256)        │
+└──────────┬──────────────────────────────────────────────────────┘
+           │ SQLAlchemy 2.0 async (asyncpg)
+┌──────────▼──────────┐              ┌────────────────────────────┐
+│   SUPABASE          │              │   CAPA DE IA (Fase 4)      │
+│   PostgreSQL        │              │   ChromaDB + LangChain      │
+│   Auth (JWT/HS256)  │              │   Groq / Gemini / Ollama   │
+│   Storage (assets)  │              └────────────────────────────┘
+└─────────────────────┘
 ```
-
-### Principios Arquitectónicos Clave
-
-| Principio | Implementación |
-|-----------|---------------|
-| **Ground Truth** | Las reglas del juego viven SOLO en `game_rules` (PostgreSQL). La IA **nunca** inventa reglas. |
-| **JSONB Elástico** | La tabla `characters` usa JSONB para la ficha completa; cada línea (V20/W20/M20) extiende sin romper el esquema. |
-| **Auth Unificada** | Supabase emite JWTs. El backend los valida directamente (sin proxy). |
-| **Zero Cost** | Vercel Free + Supabase Free + Groq Free Tier / Ollama local = $0/mes. |
-| **Terminología** | **Prohibido** usar términos de 5ª Edición. Solo V20/W20/M20 20th Anniversary. |
 
 ---
 
-## 📁 Estructura del Monorepo
+## 📁 Estructura del Monorepo (v0.3.1)
 
 ```
-wod-codex/                          ← Raíz del monorepo
-├── handoff.md                      ← Este archivo (bitácora viva)
-├── .gitignore
-├── .env.example                    ← Variables de entorno plantilla
+wod-codex/
+├── handoff.md                              ← Bitácora viva ✅
+├── .gitignore                              ✅
+├── .env.example                            ✅
 │
-├── .ai-context/                    ← "Prompts as Code" — Memoria del equipo IA
+├── .ai-context/                            ← Prompts as Code ✅
 │   ├── README.md
-│   ├── project_context.md          ← Contexto global del proyecto
+│   ├── project_context.md
 │   └── agents/
 │       ├── arquitecto_backend.md
 │       ├── lider_frontend.md
 │       ├── ingeniero_ia.md
 │       └── documentador_tecnico.md
 │
-├── backend/                        ← FastAPI Python App
-│   ├── requirements.txt
-│   ├── main.py                     ← Entry point FastAPI
-│   ├── database.py                 ← Engine SQLAlchemy + SessionLocal
-│   ├── models.py                   ← Modelos ORM (User, Chronicle, Character…)
-│   ├── schemas/                    ← Pydantic v2 schemas (request/response)
-│   │   └── __init__.py
-│   ├── routers/                    ← Routers FastAPI por dominio
-│   │   └── __init__.py
-│   └── services/                   ← Lógica de negocio + capa IA
-│       └── __init__.py
+├── backend/
+│   ├── main.py                             ← FastAPI app v0.2.0 ✅
+│   ├── models.py                           ← ORM 5 modelos JSONB ✅
+│   ├── core/config.py                      ← pydantic-settings ✅
+│   ├── db/database.py                      ← asyncpg engine ✅
+│   ├── api/
+│   │   ├── dependencies.py                 ← JWT auth + upsert ✅
+│   │   └── routers/
+│   │       ├── chronicles.py               ← CRUD crónicas ✅
+│   │       ├── characters.py               ← CRUD personajes ✅
+│   │       └── game_rules.py               ← Grimorio CRUD ✅
+│   ├── schemas/
+│   │   ├── common.py                       ← PaginatedResponse[T] ✅
+│   │   ├── chronicle.py                    ✅
+│   │   ├── character.py                    ← StatsV20/W20/M20 ✅
+│   │   └── game_rule.py                    ✅
+│   ├── services/                           ← (Fase 4)
+│   ├── requirements.txt                    ✅
+│   │
+│   ⚠️  DEPRECADOS — eliminar antes de Fase 4:
+│   ├── config.py   ← usar core/config.py
+│   ├── database.py ← usar db/database.py
+│   └── routers/__init__.py
 │
-└── frontend/                       ← React 18 + Vite App
-    ├── package.json
-    ├── vite.config.js
-    ├── tailwind.config.js
-    ├── index.html
+└── frontend/
+    ├── package.json                        ✅ (globals corregido)
+    ├── vite.config.js                      ✅ (cacheDir → /tmp)
+    ├── tailwind.config.js                  ✅ (paleta Gothic-Punk)
+    ├── postcss.config.js                   ✅
+    ├── index.html                          ✅
     └── src/
-        ├── main.jsx                ← Entry point React
-        ├── App.jsx                 ← Router principal
-        ├── components/             ← UI Kit propio (Ghost Borders, etc.)
-        ├── pages/                  ← Vistas principales (6 vistas)
-        ├── store/                  ← Zustand stores
-        └── styles/
-            └── globals.css         ← Tokens CSS + Tailwind base
+        ├── main.jsx                        ✅ (importa index.css)
+        ├── App.jsx                         ✅ (6 rutas + MainLayout)
+        ├── index.css                       ✅ (design tokens + primitivos)
+        ├── components/
+        │   ├── ui/
+        │   │   ├── Card.jsx                ✅ ghost border + faction top-border
+        │   │   ├── Button.jsx              ✅ 5 variantes + label-caps
+        │   │   ├── Badge.jsx               ✅ faction colors + dot
+        │   │   ├── Input.jsx               ✅ dark + focus glow
+        │   │   ├── Select.jsx              ✅ (bug forwardRef corregido)
+        │   │   ├── DotRating.jsx           ✅ dots interactivos
+        │   │   └── index.js                ✅ barrel export
+        │   └── layout/
+        │       ├── Sidebar.jsx             ✅ active left-border + SVG icons
+        │       └── MainLayout.jsx          ✅ Outlet + scroll
+        └── views/
+            ├── Dashboard.jsx               ✅ grid V20/W20/M20 mock
+            ├── Grimorio.jsx                ✅ wiki + Oracle AI chat
+            ├── Forja.jsx                   ✅ form + ficha M20
+            ├── PantallaNarrador.jsx        ✅ 3 cols + dado roller
+            ├── HubCronica.jsx              ✅ W20 hub + timeline
+            └── BitacoraSesion.jsx          ✅ mic + AI scan badges
 ```
 
 ---
 
-## 🎯 Las 6 Vistas del Producto
+## 🌐 Mapa de Rutas API (v0.2.0)
 
-| # | Vista | Descripción | Estado |
-|---|-------|-------------|--------|
-| 1 | **Tablero Principal** | CRUD de Crónicas activas | 🔴 Pendiente |
-| 2 | **El Grimorio** | Wiki de reglas + Chat IA consultor | 🔴 Pendiente |
-| 3 | **La Forja** | Generador de PNJs con ficha completa | 🔴 Pendiente |
-| 4 | **Pantalla del Narrador** | Dashboard en vivo durante la partida | 🔴 Pendiente |
-| 5 | **Hub de la Crónica** | Detalle de campaña, tramas, línea temporal | 🔴 Pendiente |
-| 6 | **Bitácora de Sesión** | Ingreso de texto + extracción de eventos por IA | 🔴 Pendiente |
+| Método   | Ruta | Descripción | Auth |
+|----------|------|-------------|------|
+| `GET`    | `/health` | Health check | ❌ |
+| `GET`    | `/api/v1/chronicles/` | Listar crónicas (paginado) | 🔒 |
+| `POST`   | `/api/v1/chronicles/` | Crear crónica | 🔒 |
+| `GET`    | `/api/v1/chronicles/{id}` | Obtener crónica | 🔒 |
+| `PATCH`  | `/api/v1/chronicles/{id}` | Actualizar crónica | 🔒 |
+| `DELETE` | `/api/v1/chronicles/{id}` | Eliminar (cascade) | 🔒 |
+| `GET`    | `/api/v1/characters/?chronicle_id=` | Listar personajes | 🔒 |
+| `POST`   | `/api/v1/characters/` | Crear personaje | 🔒 |
+| `GET`    | `/api/v1/characters/{id}` | Obtener personaje | 🔒 |
+| `PATCH`  | `/api/v1/characters/{id}` | Actualizar stats | 🔒 |
+| `DELETE` | `/api/v1/characters/{id}` | Eliminar personaje | 🔒 |
+| `GET`    | `/api/v1/gamerules/` | Buscar reglas (filtros múltiples) | 🔒 |
+| `GET`    | `/api/v1/gamerules/hierarchy/{name}` | Niveles de un poder | 🔒 |
+| `GET`    | `/api/v1/gamerules/{id}` | Obtener regla | 🔒 |
+| `POST`   | `/api/v1/gamerules/` | Crear regla (seed) | 🔒 |
+| `PATCH`  | `/api/v1/gamerules/{id}` | Actualizar + regen embedding | 🔒 |
+
+## 🌐 Mapa de Rutas Frontend (v0.3.1)
+
+| Ruta | Vista | Estado |
+|------|-------|--------|
+| `/` | `Dashboard.jsx` | ✅ Mock data V20/W20/M20 |
+| `/grimorio` | `Grimorio.jsx` | ✅ Oracle AI chat funcional |
+| `/forja` | `Forja.jsx` | ✅ Ficha M20 interactiva |
+| `/narrador` | `PantallaNarrador.jsx` | ✅ Dado roller funcional |
+| `/cronica/:id` | `HubCronica.jsx` | ✅ Mock W20 |
+| `/bitacora` | `BitacoraSesion.jsx` | ✅ Mic + AI scan |
 
 ---
 
-## ✅ Tareas Completadas
+## ✅ Historial de Fases Completadas
 
 ### Fase 1 — Fundación (2026-06-04)
+- [x] `handoff.md` inicializado · `.ai-context/` con 4 perfiles de agentes
+- [x] Monorepo scaffoldeado (`/backend`, `/frontend`, `/.ai-context`)
+- [x] `models.py` — 5 modelos SQLAlchemy: `User`, `Chronicle`, `GameSession`, `Character` (JSONB), `GameRule`
+- [x] `requirements.txt` + `package.json` base
 
-- [x] **Definición de arquitectura** general del sistema (multi-agente)
-- [x] **handoff.md** creado — bitácora viva inicializada
-- [x] **/.ai-context** — Directorio de agentes con perfiles "Prompts as Code"
-- [x] **Estructura del monorepo** — árbol de carpetas scaffoldeado
-- [x] **models.py** — 5 modelos SQLAlchemy: `User`, `Chronicle`, `Session`, `Character` (JSONB), `GameRule`
-- [x] **requirements.txt** — dependencias Python 3.11+
-- [x] **package.json** — dependencias React 18 + Vite + Tailwind + Zustand
+### Fase 2 — API Base FastAPI (2026-06-04)
+- [x] `core/config.py` — pydantic-settings con CORS dinámico
+- [x] `db/database.py` — asyncpg, `pool_pre_ping=True`, `get_db` dependency
+- [x] `api/dependencies.py` — `get_current_user` JWT HS256 + upsert en primer login
+- [x] Schemas Pydantic v2: `common`, `chronicle`, `character` (StatsV20/W20/M20), `game_rule`
+- [x] 3 routers CRUD: `/chronicles`, `/characters`, `/gamerules` — paginación, ownership, filtros
+- [x] `main.py` v0.2.0 — CORS, X-Process-Time, exception handlers
 
----
+### Fase 3 — Frontend Base (2026-06-04)
+- [x] Design system completo: `tailwind.config.js` (paleta Gothic-Punk, 3 faction colors) + `index.css`
+- [x] UI Kit atómico (6 componentes, cero librerías externas): `Card`, `Button`, `Badge`, `Input`, `Select`, `DotRating`
+- [x] Layout: `Sidebar` (active left-border SVG) + `MainLayout` (React Router Outlet)
+- [x] 6 vistas con mock data fiel a los screenshots: Dashboard, Grimorio, Forja, PantallaNarrador, HubCronica, BitacoraSesion
+- [x] `App.jsx` — React Router con `<Route element={<MainLayout />}>` wrapping las 6 vistas
 
-## 🔄 Tareas en Curso
-
-*(ninguna — fase 1 recién completada)*
-
----
-
-## 📋 Próximos Pasos (Fase 2)
-
-### Prioridad Alta
-- [ ] **database.py** — Configurar engine SQLAlchemy con Supabase connection string
-- [ ] **main.py** — App FastAPI base con middleware CORS y health check
-- [ ] **schemas/** — Pydantic v2 schemas para todos los modelos
-- [ ] **Auth router** — Validación de JWT Supabase + endpoint `/auth/me`
-- [ ] **Migraciones** — Alembic init + primera migración (create all tables)
-- [ ] **Seed script** — Poblar `game_rules` con datos de V20 (muestra: 10 Disciplinas)
-
-### Prioridad Media
-- [ ] **CRUD routers** — `/chronicles`, `/characters`, `/sessions`
-- [ ] **GameRule router** — Endpoint de búsqueda con filtros (game_line, category)
-- [ ] **Supabase config** — RLS policies para multi-tenant seguro
-
-### Prioridad Baja
-- [ ] **Frontend scaffold** — Tokens CSS, componentes base (GhostButton, GhostCard)
-- [ ] **Zustand stores** — `useChronicleStore`, `useCharacterStore`
-- [ ] **React Router** — Rutas base para las 6 vistas
+### Fase 3 — Hotfixes (2026-06-04)
+- [x] `package.json` — `@globals/browser` → `globals` (paquete npm correcto)
+- [x] `Select.jsx` — bug sintaxis `forwardRef((...)) =>` → `forwardRef((...) =>` (un solo `)` antes del `=>`)
+- [x] `vite.config.js` — `cacheDir: '/tmp/vite-wod-codex'` para evitar `EACCES` en rutas con espacios
 
 ---
 
-## 🧠 Decisiones Arquitectónicas Registradas
+## 📋 Próximos Pasos — Fase 4 (IA & Seed de Reglas)
 
-### ADR-001: JSONB para fichas de personaje
-- **Decisión:** Usar columna JSONB `stats` en `characters` en lugar de tablas relacionales separadas por sistema.
-- **Razón:** V20/W20/M20 tienen estructuras divergentes (Disciplinas vs Dones vs Esferas). JSONB permite extensión sin migraciones disruptivas.
-- **Trade-off:** Se pierde validación de esquema a nivel DB; se compensa con Pydantic v2 validators en el backend.
+### 🧠 Arquitecto Backend
+- [ ] Eliminar archivos deprecados: `backend/config.py`, `backend/database.py`, `backend/routers/__init__.py`
+- [ ] `alembic init` + primera migración `create_initial_tables`
+- [ ] `backend/scripts/seed_rules.py` — poblar `game_rules` con Dominar Nv1-5 (V20)
 
-### ADR-002: Backend valida JWT directamente (sin proxy Supabase)
-- **Decisión:** FastAPI valida el JWT con la clave pública JWKS de Supabase directamente.
-- **Razón:** Elimina un hop de red y mantiene el backend stateless.
-- **Trade-off:** Requiere sincronizar la URL del JWKS endpoint (`SUPABASE_JWKS_URL`) en el entorno.
+### 🤖 Ingeniero de IA
+- [ ] `backend/services/rag_service.py` — ChromaDB + sentence-transformers + LangChain LCEL
+- [ ] `backend/api/routers/ai_chat.py` — endpoint `POST /ai/oracle` (Grimorio)
+- [ ] `backend/api/routers/npc_forge.py` — endpoint `POST /ai/forge` (La Forja)
 
-### ADR-003: IA es oráculo, no fuente de verdad
-- **Decisión:** El LLM nunca responde preguntas de reglas desde su memoria de entrenamiento. Siempre consulta `game_rules` vía RAG.
-- **Razón:** Las reglas del TTRPG son precisas y deben ser fidedignas. La alucinación en reglas rompería la partida.
-- **Implementación:** ChromaDB indexa los registros de `game_rules`; LangChain retrieves antes de cada respuesta.
+### 🎨 Líder Frontend
+- [ ] `src/store/useAuthStore.js` — Zustand + Supabase Auth
+- [ ] `src/store/useChronicleStore.js` — CRUD real (reemplaza mock en Dashboard)
+- [ ] `src/views/AuthPage.jsx` — login/registro
+- [ ] Conectar `Grimorio.jsx` Oracle al endpoint `/api/v1/ai/oracle`
 
-### ADR-004: Terminología bloqueada (5ª Edición)
-- **Decisión:** El sistema NO soporta, referencia ni usa terminología de V5/W5/M5.
-- **Razón:** El público objetivo son narradores de las ediciones 20 Aniversario. Mezclar ediciones crea confusión mecánica.
+---
+
+## 🧠 Decisiones Arquitectónicas (ADRs)
+
+| # | Decisión | Razón |
+|---|----------|-------|
+| ADR-001 | JSONB para `Character.stats` | V20/W20/M20 estructuras divergentes; sin migraciones disruptivas |
+| ADR-002 | JWT HS256 directo (no JWKS) | Sin hop extra de red; secreto en Dashboard de Supabase |
+| ADR-003 | IA como oráculo (no fuente de verdad) | Reglas precisas en DB; LLM solo interpreta, nunca inventa |
+| ADR-004 | Terminología bloqueada (5ª Edición) | Público objetivo son narradores de ediciones 20 Aniversario |
+| ADR-005 | Upsert de usuario en primer login | Sin endpoint `/register` separado; Supabase maneja el registro |
+| ADR-006 | `PaginatedResponse[T]` genérico | Frontend necesita `total` y `pages` para controles de paginación |
+| ADR-007 | Ownership check via JOIN SQL | Evita traer objetos ORM para descartarlos; más eficiente y seguro |
+| ADR-008 | `cacheDir` de Vite en `/tmp` | Evita `EACCES` en rutas con espacios en macOS |
 
 ---
 
 ## 👥 Equipo de Agentes
 
-| Agente | Rol | Archivo de Perfil |
-|--------|-----|-------------------|
-| 🧠 Arquitecto Backend | FastAPI, SQLAlchemy, Supabase, JWT | `.ai-context/agents/arquitecto_backend.md` |
-| 🎨 Líder Frontend | React, Tailwind, Gothic-Punk UI Kit | `.ai-context/agents/lider_frontend.md` |
-| 🤖 Ingeniero de IA | LangChain, ChromaDB, RAG, LLMs | `.ai-context/agents/ingeniero_ia.md` |
-| 📝 Documentador Técnico | handoff.md, ADRs, Project Management | `.ai-context/agents/documentador_tecnico.md` |
+| Agente | Rol | Estado |
+|--------|-----|--------|
+| 🧠 Arquitecto Backend | FastAPI, SQLAlchemy, Auth | Fase 2 ✅ |
+| 🎨 Líder Frontend | React, Tailwind, UI Kit | Fase 3 ✅ |
+| 🤖 Ingeniero de IA | LangChain, ChromaDB, RAG | Fase 4 pendiente |
+| 📝 Documentador Técnico | handoff.md, ADRs | Activo |
 
 ---
 
 ## 🌐 Variables de Entorno Requeridas
 
 ```env
-# Supabase
-SUPABASE_URL=https://<project>.supabase.co
+# ── Base de Datos ──────────────────────────────────────────────
+DATABASE_URL=postgresql+asyncpg://<user>:<pass>@db.<ref>.supabase.co:5432/postgres
+
+# ── Supabase ───────────────────────────────────────────────────
+SUPABASE_URL=https://<ref>.supabase.co
 SUPABASE_ANON_KEY=<anon-key>
 SUPABASE_SERVICE_KEY=<service-role-key>
-SUPABASE_JWKS_URL=https://<project>.supabase.co/auth/v1/.well-known/jwks.json
+SUPABASE_JWT_SECRET=<jwt-secret>    # Dashboard → Settings → API → JWT Secret
 
-# Database
-DATABASE_URL=postgresql+asyncpg://<user>:<pass>@db.<project>.supabase.co:5432/postgres
-
-# IA
-GROQ_API_KEY=<groq-key>          # Opción A: Groq (LLaMA 3)
-GEMINI_API_KEY=<gemini-key>      # Opción B: Google Gemini
-OLLAMA_BASE_URL=http://localhost:11434  # Opción C: Local
-
-# App
-SECRET_KEY=<random-256-bit>
+# ── App ────────────────────────────────────────────────────────
 ENVIRONMENT=development
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:5173  # Cambiar a dominio Vercel en producción
+
+# ── IA (Fase 4) ────────────────────────────────────────────────
+GROQ_API_KEY=<groq-key>
+GEMINI_API_KEY=<gemini-key>
+```
+
+---
+
+## 🚀 Comandos de Arranque
+
+```bash
+# ── Backend ────────────────────────────────────────────────────
+cd backend
+pip install -r requirements.txt
+uvicorn backend.main:app --reload --port 8000
+# Docs: http://localhost:8000/docs
+
+# ── Frontend ───────────────────────────────────────────────────
+cd frontend
+npm install
+npm run dev    # → http://localhost:5173
 ```
 
 ---

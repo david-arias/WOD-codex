@@ -5,6 +5,8 @@ import path from 'path'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  // cacheDir fuera del proyecto para evitar EACCES en rutas con espacios
+  cacheDir: '/tmp/vite-wod-codex',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

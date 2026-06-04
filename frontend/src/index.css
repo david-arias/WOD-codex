@@ -1,0 +1,218 @@
+/* ============================================================
+   El Códice del Narrador — index.css
+   Design System: Gothic-Punk Modern (design.md)
+   ============================================================ */
+
+/* Google Fonts — Playfair Display + Inter */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── CSS Custom Properties (design.md tokens) ──────────────── */
+:root {
+  /* Surface tiers */
+  --surface:          #141313;
+  --surface-low:      #1c1b1b;
+  --surface-base:     #201f1f;
+  --surface-high:     #2a2a2a;
+  --surface-highest:  #353434;
+  --surface-lowest:   #0e0e0e;
+
+  /* Text */
+  --on-surface:         #e5e2e1;
+  --on-surface-variant: #c4c7c8;
+  --text-muted:         #9ca3af;
+
+  /* Borders */
+  --outline:         #8e9192;
+  --outline-variant: #444748;
+  --ghost-border:    rgba(255, 255, 255, 0.06);
+  --ghost-border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Faction accents */
+  --blood-default:   #8b1a1a;
+  --blood-bright:    #c62828;
+  --blood-text:      #f87171;
+  --amber-default:   #92400e;
+  --amber-bright:    #d97706;
+  --amber-text:      #fbbf24;
+  --arcane-default:  #4c1d95;
+  --arcane-bright:   #7c3aed;
+  --arcane-text:     #a78bfa;
+
+  /* Sidebar */
+  --sidebar-width: 220px;
+  --sidebar-bg:    #0e0e0e;
+}
+
+/* ── Base Reset ─────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  height: 100%;
+}
+
+body {
+  background-color: var(--surface);
+  color: var(--on-surface);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  height: 100%;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
+  display: flex;
+}
+
+/* ── Custom Scrollbar ────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Typography Utilities ────────────────────────────────────── */
+@layer utilities {
+  .font-playfair { font-family: 'Playfair Display', Georgia, serif; }
+  .font-inter    { font-family: 'Inter', system-ui, sans-serif; }
+  .font-mono     { font-family: 'JetBrains Mono', monospace; }
+
+  /* label-caps — design.md spec */
+  .label-caps {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 16px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* Ghost border — core of the visual language */
+  .ghost-border {
+    border: 1px solid var(--ghost-border);
+  }
+  .ghost-border:hover {
+    border-color: var(--ghost-border-hover);
+  }
+
+  /* Faction top border for cards */
+  .faction-border-blood  { border-top: 2px solid var(--blood-bright); }
+  .faction-border-amber  { border-top: 2px solid var(--amber-bright); }
+  .faction-border-arcane { border-top: 2px solid var(--arcane-bright); }
+
+  /* Scrollable area */
+  .scrollable {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.1) transparent;
+  }
+}
+
+/* ── Component Primitives ────────────────────────────────────── */
+@layer components {
+
+  /* Ghost Button — primary interaction pattern */
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    color: var(--on-surface);
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 180ms ease;
+    white-space: nowrap;
+  }
+  .btn-ghost:hover {
+    border-color: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .btn-ghost:active {
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  /* Primary action (faction accent) */
+  .btn-primary-blood {
+    @apply btn-ghost;
+    border-color: var(--blood-bright);
+    color: var(--blood-text);
+  }
+  .btn-primary-blood:hover {
+    background: rgba(198, 40, 40, 0.12);
+    border-color: var(--blood-text);
+  }
+
+  .btn-primary-arcane {
+    @apply btn-ghost;
+    border-color: var(--arcane-bright);
+    color: var(--arcane-text);
+  }
+  .btn-primary-arcane:hover {
+    background: rgba(124, 58, 237, 0.12);
+    border-color: var(--arcane-text);
+  }
+
+  /* Card container */
+  .wod-card {
+    background: var(--surface-low);
+    border: 1px solid var(--ghost-border);
+    border-radius: 4px;
+    transition: border-color 180ms ease;
+  }
+  .wod-card:hover {
+    border-color: var(--ghost-border-hover);
+  }
+
+  /* Ghost input */
+  .wod-input {
+    width: 100%;
+    background: var(--surface-base);
+    border: 1px solid var(--outline-variant);
+    border-radius: 4px;
+    padding: 8px 12px;
+    color: var(--on-surface);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 150ms ease;
+  }
+  .wod-input:focus {
+    border-color: rgba(229, 226, 225, 0.4);
+    box-shadow: 0 0 0 1px rgba(229, 226, 225, 0.08);
+  }
+  .wod-input::placeholder { color: var(--text-muted); }
+
+  /* Section heading */
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--on-surface);
+    line-height: 28px;
+  }
+}
