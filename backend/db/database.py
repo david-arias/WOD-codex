@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.pool import NullPool
 
 from backend.core.config import settings
 
@@ -25,20 +26,14 @@ from backend.core.config import settings
 # ─────────────────────────────────────────────────────────────────
 # Engine asíncrono
 # ─────────────────────────────────────────────────────────────────
+# NullPool: Supabase usa PgBouncer en modo Transaction, incompatible
+# con prepared statements de asyncpg. NullPool abre/cierra una
+# conexión nueva por request, evitando el conflicto. Supabase gestiona
+# el pooling en su propio lado (PgBouncer), así que no perdemos nada.
 engine = create_async_engine(
     settings.DATABASE_URL,
-    # Logging de SQL solo en desarrollo (verbose pero útil para debug)
     echo=settings.is_development,
-    # pool_pre_ping: ejecuta "SELECT 1" antes de usar una conexión del pool.
-    # Crítico para Supabase, que cierra conexiones idle tras ~5min.
-    pool_pre_ping=True,
-    # Tamaño del pool de conexiones concurrentes
-    pool_size=5,
-    max_overflow=10,
-    # Tiempo máximo de espera para obtener una conexión del pool (segundos)
-    pool_timeout=30,
-    # Recicla conexiones cada 30min para evitar stale connections con Supabase
-    pool_recycle=1800,
+    poolclass=NullPool,
 )
 
 # Factory de sesiones asíncronas

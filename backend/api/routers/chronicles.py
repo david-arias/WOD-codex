@@ -192,6 +192,7 @@ async def update_chronicle(
 @router.delete(
     "/{chronicle_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="Eliminar una crónica",
     description=(
         "Elimina permanentemente la crónica y todo su contenido "

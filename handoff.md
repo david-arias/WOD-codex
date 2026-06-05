@@ -1,6 +1,6 @@
 # 📜 HANDOFF.MD — El Códice del Narrador
 > **Bitácora Viva del Proyecto** · Actualizado por el 📝 Documentador Técnico
-> **Versión:** 0.3.1 · **Fecha:** 2026-06-04 · **Fase Actual:** Fase 4 — IA & Seed de Reglas
+> **Versión:** 0.4.0 · **Fecha:** 2026-06-05 · **Fase Actual:** Fase 5 — Grimorio & Seed de Reglas
 
 ---
 
@@ -60,9 +60,9 @@ wod-codex/
 │   ├── core/config.py                      ← pydantic-settings ✅
 │   ├── db/database.py                      ← asyncpg engine ✅
 │   ├── api/
-│   │   ├── dependencies.py                 ← JWT auth + upsert ✅
+│   │   ├── dependencies.py                 ← JWT HS256 + upsert ✅ (VALIDADO Fase 4)
 │   │   └── routers/
-│   │       ├── chronicles.py               ← CRUD crónicas ✅
+│   │       ├── chronicles.py               ← CRUD crónicas + owner filter ✅
 │   │       ├── characters.py               ← CRUD personajes ✅
 │   │       └── game_rules.py               ← Grimorio CRUD ✅
 │   ├── schemas/
@@ -70,24 +70,28 @@ wod-codex/
 │   │   ├── chronicle.py                    ✅
 │   │   ├── character.py                    ← StatsV20/W20/M20 ✅
 │   │   └── game_rule.py                    ✅
-│   ├── services/                           ← (Fase 4)
+│   ├── services/                           ← (Fase 5)
 │   ├── requirements.txt                    ✅
 │   │
-│   ⚠️  DEPRECADOS — eliminar antes de Fase 4:
+│   ⚠️  DEPRECADOS — eliminar antes de Fase 5:
 │   ├── config.py   ← usar core/config.py
 │   ├── database.py ← usar db/database.py
 │   └── routers/__init__.py
 │
 └── frontend/
-    ├── package.json                        ✅ (globals corregido)
+    ├── package.json                        ✅ + @supabase/supabase-js ^2.47.0
     ├── vite.config.js                      ✅ (cacheDir → /tmp)
     ├── tailwind.config.js                  ✅ (paleta Gothic-Punk)
     ├── postcss.config.js                   ✅
     ├── index.html                          ✅
     └── src/
-        ├── main.jsx                        ✅ (importa index.css)
-        ├── App.jsx                         ✅ (6 rutas + MainLayout)
+        ├── main.jsx                        ✅
+        ├── App.jsx                         ✅ AuthProvider + RequireAuth + PublicOnly guards
         ├── index.css                       ✅ (design tokens + primitivos)
+        ├── lib/
+        │   └── supabaseClient.js           ✅ singleton createClient (NUEVO Fase 4)
+        ├── context/
+        │   └── AuthContext.jsx             ✅ session/user/token + signIn/signOut + authFetch (NUEVO Fase 4)
         ├── components/
         │   ├── ui/
         │   │   ├── Card.jsx                ✅ ghost border + faction top-border
@@ -101,7 +105,8 @@ wod-codex/
         │       ├── Sidebar.jsx             ✅ active left-border + SVG icons
         │       └── MainLayout.jsx          ✅ Outlet + scroll
         └── views/
-            ├── Dashboard.jsx               ✅ grid V20/W20/M20 mock
+            ├── Login.jsx                   ✅ gothic-punk + ghost borders + Supabase auth (NUEVO Fase 4)
+            ├── Dashboard.jsx               ✅ API real + GAME_LINE_MAP + modal crear crónica (ACTUALIZADO Fase 4)
             ├── Grimorio.jsx                ✅ wiki + Oracle AI chat
             ├── Forja.jsx                   ✅ form + ficha M20
             ├── PantallaNarrador.jsx        ✅ 3 cols + dado roller
@@ -173,25 +178,39 @@ wod-codex/
 - [x] `Select.jsx` — bug sintaxis `forwardRef((...)) =>` → `forwardRef((...) =>` (un solo `)` antes del `=>`)
 - [x] `vite.config.js` — `cacheDir: '/tmp/vite-wod-codex'` para evitar `EACCES` en rutas con espacios
 
+### Fase 4 — Auth + Dashboard Real (2026-06-05)
+- [x] `frontend/src/lib/supabaseClient.js` — singleton `createClient` con `persistSession` y `autoRefreshToken`
+- [x] `frontend/package.json` — añadida dependencia `@supabase/supabase-js ^2.47.0`
+- [x] `frontend/src/context/AuthContext.jsx` — `AuthProvider` + `useAuth` hook + `authFetch` helper con Bearer JWT automático
+- [x] `frontend/src/views/Login.jsx` — vista gótica-punk, ghost borders, focus glow blood, traducción de errores Supabase al español
+- [x] `frontend/src/App.jsx` — `RequireAuth` guard (→ /login si no session) + `PublicOnly` guard (→ / si ya logueado) + spinner de hidratación
+- [x] `frontend/src/views/Dashboard.jsx` — mock data eliminado, `GET /api/v1/chronicles/` con JWT, `GAME_LINE_MAP` dinámico V20/W20/M20, `relativeTime()`, modal `POST /api/v1/chronicles/`
+
+### Fase 4 — Hotfixes de integración (2026-06-05)
+- [x] `backend/api/routers/chronicles.py` — `response_model=None` en `DELETE 204` (FastAPI 0.115 strict)
+- [x] `backend/api/routers/characters.py` — ídem `DELETE 204`
+- [x] `backend/db/database.py` — `poolclass=NullPool` (Supabase PgBouncer Transaction mode incompatible con asyncpg prepared statements)
+- [x] `backend/requirements-core.txt` — creado con dependencias mínimas Fase 1-4 (sin spacy/LangChain/ChromaDB); añadido `greenlet==3.1.1`
+- [x] `backend/api/dependencies.py` — **soporte dual ES256/HS256**: proyectos nuevos de Supabase usan ES256 (ECDSA); la clave pública se descarga del JWKS endpoint (`{SUPABASE_URL}/auth/v1/.well-known/jwks.json`) y se cachea 1 hora en memoria. Proyectos legacy siguen usando HS256 con `SUPABASE_JWT_SECRET`.
+
 ---
 
-## 📋 Próximos Pasos — Fase 4 (IA & Seed de Reglas)
+## 📋 Próximos Pasos — Fase 5 (Grimorio & Seed de Reglas)
 
 ### 🧠 Arquitecto Backend
 - [ ] Eliminar archivos deprecados: `backend/config.py`, `backend/database.py`, `backend/routers/__init__.py`
 - [ ] `alembic init` + primera migración `create_initial_tables`
-- [ ] `backend/scripts/seed_rules.py` — poblar `game_rules` con Dominar Nv1-5 (V20)
+- [ ] `backend/scripts/seed_rules.py` — poblar `game_rules` con Dominar Nv1-5 (V20), Dones Ragabash (W20), Esfera Materia (M20)
 
 ### 🤖 Ingeniero de IA
 - [ ] `backend/services/rag_service.py` — ChromaDB + sentence-transformers + LangChain LCEL
-- [ ] `backend/api/routers/ai_chat.py` — endpoint `POST /ai/oracle` (Grimorio)
-- [ ] `backend/api/routers/npc_forge.py` — endpoint `POST /ai/forge` (La Forja)
+- [ ] `backend/api/routers/ai_chat.py` — endpoint `POST /api/v1/ai/oracle` (Grimorio)
+- [ ] `backend/api/routers/npc_forge.py` — endpoint `POST /api/v1/ai/forge` (La Forja)
 
 ### 🎨 Líder Frontend
-- [ ] `src/store/useAuthStore.js` — Zustand + Supabase Auth
-- [ ] `src/store/useChronicleStore.js` — CRUD real (reemplaza mock en Dashboard)
-- [ ] `src/views/AuthPage.jsx` — login/registro
-- [ ] Conectar `Grimorio.jsx` Oracle al endpoint `/api/v1/ai/oracle`
+- [ ] Conectar `Grimorio.jsx` Oracle al endpoint `POST /api/v1/ai/oracle` (reemplaza mock)
+- [ ] Conectar `HubCronica.jsx` a `GET /api/v1/chronicles/:id` + `GET /api/v1/characters/?chronicle_id=`
+- [ ] Añadir botón "Cerrar sesión" en `Sidebar.jsx` usando `signOut()` del `useAuth` hook
 
 ---
 
@@ -207,6 +226,12 @@ wod-codex/
 | ADR-006 | `PaginatedResponse[T]` genérico | Frontend necesita `total` y `pages` para controles de paginación |
 | ADR-007 | Ownership check via JOIN SQL | Evita traer objetos ORM para descartarlos; más eficiente y seguro |
 | ADR-008 | `cacheDir` de Vite en `/tmp` | Evita `EACCES` en rutas con espacios en macOS |
+| ADR-009 | `authFetch` como helper en `AuthContext` | Centraliza el header `Authorization: Bearer` en un solo lugar; evitar duplicar lógica en cada vista |
+| ADR-010 | `RequireAuth` + `PublicOnly` como route guards en `App.jsx` | Separación limpia de rutas públicas/protegidas sin lógica de auth en cada vista individual |
+| ADR-011 | `session === undefined` vs `null` en `AuthContext` | `undefined` = hidratando (spinner), `null` = sin sesión confirmada; evita flash de redireccionamiento |
+| ADR-012 | `NullPool` para SQLAlchemy + Supabase | PgBouncer en modo Transaction no soporta prepared statements de asyncpg; `NullPool` abre/cierra conexión por request. Supabase gestiona el pooling en su lado |
+| ADR-013 | Soporte dual ES256/HS256 en `dependencies.py` | Supabase migró a ES256 en proyectos nuevos. El backend lee el `alg` del header JWT y descarga la clave pública del JWKS endpoint si es ES256; usa `SUPABASE_JWT_SECRET` si es HS256 |
+| ADR-014 | Python 3.12 vía pyenv para el backend | Python 3.14 no tiene wheels precompiladas para pydantic-core; pyenv permite fijar 3.12.7 solo en `/backend` sin afectar el sistema |
 
 ---
 
@@ -237,7 +262,12 @@ SUPABASE_JWT_SECRET=<jwt-secret>    # Dashboard → Settings → API → JWT Sec
 ENVIRONMENT=development
 FRONTEND_URL=http://localhost:5173  # Cambiar a dominio Vercel en producción
 
-# ── IA (Fase 4) ────────────────────────────────────────────────
+# ── Frontend (.env.local en /frontend) ─────────────────────────
+VITE_SUPABASE_URL=https://<ref>.supabase.co
+VITE_SUPABASE_ANON_KEY=<anon-key>           # Pública — segura en el cliente
+VITE_API_BASE_URL=http://localhost:8000      # Base para authFetch; cambiar en producción
+
+# ── IA (Fase 5) ────────────────────────────────────────────────
 GROQ_API_KEY=<groq-key>
 GEMINI_API_KEY=<gemini-key>
 ```
