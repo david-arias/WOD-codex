@@ -94,6 +94,7 @@ wod-codex/
         │   └── AuthContext.jsx             ✅ session/user/token + signIn/signOut + authFetch (NUEVO Fase 4)
         ├── components/
         │   ├── ui/
+        │   │   ├── OracleChat.jsx          ✅ widget flotante chat + botón circular + popover + mock responses (NUEVO Fase 5.5)
         │   │   ├── Card.jsx                ✅ ghost border + faction top-border
         │   │   ├── Button.jsx              ✅ 5 variantes + label-caps
         │   │   ├── Badge.jsx               ✅ faction colors + dot
@@ -107,7 +108,7 @@ wod-codex/
         └── views/
             ├── Login.jsx                   ✅ gothic-punk + ghost borders + Supabase auth (NUEVO Fase 4)
             ├── Dashboard.jsx               ✅ API real + GAME_LINE_MAP + modal crear crónica (ACTUALIZADO Fase 4)
-            ├── Grimorio.jsx                ✅ wiki + Oracle AI chat
+            ├── Grimorio.jsx                ✅ Enciclopedia A-Z pantalla completa + tabs V20/W20/M20 + búsqueda predictiva (REDISEÑO Fase 5.5)
             ├── Forja.jsx                   ✅ form + ficha M20
             ├── PantallaNarrador.jsx        ✅ 3 cols + dado roller
             ├── HubCronica.jsx              ✅ W20 hub + timeline
@@ -141,8 +142,9 @@ wod-codex/
 
 | Ruta | Vista | Estado |
 |------|-------|--------|
-| `/` | `Dashboard.jsx` | ✅ Mock data V20/W20/M20 |
-| `/grimorio` | `Grimorio.jsx` | ✅ Oracle AI chat funcional |
+| `/` | `Dashboard.jsx` | ✅ API real + modal crear crónica |
+| `/grimorio` | `Grimorio.jsx` | ✅ Enciclopedia A-Z + API + Links dinámicos |
+| `/grimorio/:gameLine/:slug` | `DetalleRegla.jsx` | ✅ Detalle por slug + Markdown renderer |
 | `/forja` | `Forja.jsx` | ✅ Ficha M20 interactiva |
 | `/narrador` | `PantallaNarrador.jsx` | ✅ Dado roller funcional |
 | `/cronica/:id` | `HubCronica.jsx` | ✅ Mock W20 |
@@ -186,6 +188,22 @@ wod-codex/
 - [x] `frontend/src/App.jsx` — `RequireAuth` guard (→ /login si no session) + `PublicOnly` guard (→ / si ya logueado) + spinner de hidratación
 - [x] `frontend/src/views/Dashboard.jsx` — mock data eliminado, `GET /api/v1/chronicles/` con JWT, `GAME_LINE_MAP` dinámico V20/W20/M20, `relativeTime()`, modal `POST /api/v1/chronicles/`
 
+### Fase 5 — Parser Markdown + Enrutamiento de Detalle (2026-06-05)
+- [x] `backend/models.py` — campo `slug VARCHAR(300)` añadido al modelo `GameRule` con índice. Ejecutar `backend/scripts/add_slug_column.sql` en Supabase SQL Editor para añadir la columna a la tabla existente.
+- [x] `backend/schemas/game_rule.py` — `slug` añadido a `GameRuleCreate` y `GameRuleResponse`
+- [x] `backend/scripts/parse_markdown.py` — Script standalone de seed: parsea secciones con YAML front matter, hace upsert por `(game_line, slug)`, soporta `--dry-run`, `--verify` y `--verbose`. Uso: `python -m backend.scripts.parse_markdown backend/data/v20_disciplinas.md --verify`
+- [x] `backend/scripts/add_slug_column.sql` — SQL para agregar columna `slug` + índice único a la tabla existente en Supabase
+- [x] `backend/data/v20_disciplinas_ejemplo.md` — Archivo de ejemplo con 4 entradas (Celeridad Nv1, Celeridad Nv2, Auspex Nv1, Brujah) en formato correcto para el parser
+- [x] `backend/api/routers/game_rules.py` — Nuevos endpoints: `GET /gamerules/glossary/{game_line}` (A-Z para Grimorio) y `GET /gamerules/detail/{game_line}/{slug}` (detalle por slug con fallback por nombre slugificado)
+- [x] `frontend/src/views/Grimorio.jsx` — Entries ahora son `<Link>` a `/grimorio/:gameLine/:slug`. Fetch real desde `GET /api/v1/gamerules/glossary/{game}` con fallback a mock si la DB está vacía. Filtros de categoría conectados a enum de DB.
+- [x] `frontend/src/views/DetalleRegla.jsx` — Nueva vista de detalle: consume `GET /api/v1/gamerules/detail/{game_line}/{slug}`, renderiza Markdown con renderer inline (sin dependencias externas), breadcrumb de navegación, badge de categoría/nivel/afiliación, bloque de Sistema destacado.
+- [x] `frontend/src/App.jsx` — Ruta añadida: `/grimorio/:gameLine/:slug` → `<DetalleRegla />`
+
+### Fase 5.5 — Grimorio Enciclopedia + Oráculo Flotante (2026-06-05)
+- [x] `frontend/src/views/Grimorio.jsx` — **Rediseño completo**: pantalla completa tipo enciclopedia/diccionario A-Z. Tabs superiores para V20/W20/M20 con acento dinámico de facción. Búsqueda predictiva con ghost border. Filtros de categoría por juego (Disciplinas/Clanes/Sectas para V20, Dones/Tribus/Ritos para W20, Esferas/Tradiciones/Paradoja para M20). Glosario indexado A-Z con `EntryCard` expandible al clic.
+- [x] `frontend/src/components/ui/OracleChat.jsx` — Widget flotante: botón circular con ícono de ojo en esquina inferior derecha. Popover de chat con animación `oracle-slide-up`. Header con estado "Consultando el Tapiz…", botones minimizar/cerrar. Indicador de escritura con dots animados. Respuestas mock que en Fase 6 se conectarán a `POST /api/v1/ai/oracle`.
+- [x] ADR-015: Decisión de diseño — de panel dividido (60/40) a enciclopedia completa + chat flotante para optimizar espacio en mesa y consultas rápidas durante sesión.
+
 ### Fase 4 — Hotfixes de integración (2026-06-05)
 - [x] `backend/api/routers/chronicles.py` — `response_model=None` en `DELETE 204` (FastAPI 0.115 strict)
 - [x] `backend/api/routers/characters.py` — ídem `DELETE 204`
@@ -207,10 +225,12 @@ wod-codex/
 - [ ] `backend/api/routers/ai_chat.py` — endpoint `POST /api/v1/ai/oracle` (Grimorio)
 - [ ] `backend/api/routers/npc_forge.py` — endpoint `POST /api/v1/ai/forge` (La Forja)
 
-### 🎨 Líder Frontend
-- [ ] Conectar `Grimorio.jsx` Oracle al endpoint `POST /api/v1/ai/oracle` (reemplaza mock)
+### 🎨 Líder Frontend — Fase 6 (La Forja)
+- [ ] Rediseñar `Forja.jsx` — Creador de personajes interactivo con ficha completa V20/W20/M20 dinámica
+- [ ] Conectar `OracleChat.jsx` al endpoint `POST /api/v1/ai/oracle` (reemplaza respuestas mock)
 - [ ] Conectar `HubCronica.jsx` a `GET /api/v1/chronicles/:id` + `GET /api/v1/characters/?chronicle_id=`
 - [ ] Añadir botón "Cerrar sesión" en `Sidebar.jsx` usando `signOut()` del `useAuth` hook
+- [ ] Poblar el Grimorio desde `GET /api/v1/gamerules/` (reemplaza `GLOSARIO` mock)
 
 ---
 
@@ -232,6 +252,10 @@ wod-codex/
 | ADR-012 | `NullPool` para SQLAlchemy + Supabase | PgBouncer en modo Transaction no soporta prepared statements de asyncpg; `NullPool` abre/cierra conexión por request. Supabase gestiona el pooling en su lado |
 | ADR-013 | Soporte dual ES256/HS256 en `dependencies.py` | Supabase migró a ES256 en proyectos nuevos. El backend lee el `alg` del header JWT y descarga la clave pública del JWKS endpoint si es ES256; usa `SUPABASE_JWT_SECRET` si es HS256 |
 | ADR-014 | Python 3.12 vía pyenv para el backend | Python 3.14 no tiene wheels precompiladas para pydantic-core; pyenv permite fijar 3.12.7 solo en `/backend` sin afectar el sistema |
+| ADR-015 | Grimorio: enciclopedia completa + chat flotante | El panel dividido 60/40 perdía espacio útil en mesa. La enciclopedia completa maximiza el glosario consultable; el Oráculo como widget flotante no interrumpe la lectura |
+| ADR-016 | Glosario mock en `GLOSARIO` const | Las entradas vienen de código hasta que `GET /api/v1/gamerules/` esté poblado con seed data. Misma forma de datos, el switch a API es un `useEffect` + `authFetch` |
+| ADR-017 | Slug derivado de nombre como fallback | Si la regla no tiene `slug` en DB, `DetalleRegla` usa `slugify(name)` para generar la URL. El endpoint `/detail` tiene el mismo fallback en el backend. Garantiza URLs funcionales sin depender del campo |
+| ADR-018 | Parser Markdown sin PyYAML | `parse_markdown.py` parsea YAML front matter con regex + split para evitar dependencias adicionales en requirements-core.txt. Compatible con el formato exacto del ejemplo |
 
 ---
 

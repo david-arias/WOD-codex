@@ -53,6 +53,7 @@ class GameRuleCreate(AppBaseModel):
     category:          RuleCategory  = Field(description="Tipo de regla (discipline, gift, sphere...)")
     name:              str           = Field(min_length=1, max_length=300, description="Nombre en español")
     name_en:           str | None    = Field(default=None, max_length=300, description="Nombre en inglés")
+    slug:              str | None    = Field(default=None, max_length=300, description="URL slug (ej: celeridad, camino-de-la-humanidad)")
     level:             int | None    = Field(default=None, ge=1, le=10, description="Nivel (si aplica)")
     parent_name:       str | None    = Field(default=None, max_length=300, description="Nombre del grupo padre")
     group_affinity:    str | None    = Field(default=None, max_length=200, description="Clan/Tribu/Tradición asociada")
@@ -98,6 +99,7 @@ class GameRuleResponse(AppBaseModel):
     category:          RuleCategory
     name:              str
     name_en:           str | None
+    slug:              str | None
     level:             int | None
     parent_name:       str | None
     group_affinity:    str | None

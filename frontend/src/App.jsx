@@ -21,6 +21,7 @@ import MainLayout from './components/layout/MainLayout.jsx'
 import Login            from './views/Login.jsx'
 import Dashboard        from './views/Dashboard.jsx'
 import Grimorio         from './views/Grimorio.jsx'
+import DetalleRegla     from './views/DetalleRegla.jsx'
 import Forja            from './views/Forja.jsx'
 import PantallaNarrador from './views/PantallaNarrador.jsx'
 import HubCronica       from './views/HubCronica.jsx'
@@ -87,9 +88,10 @@ function Router() {
         {/* Rutas protegidas */}
         <Route element={<RequireAuth />}>
           <Route element={<MainLayout />}>
-            <Route index                element={<Dashboard />} />
-            <Route path="/grimorio"     element={<Grimorio />} />
-            <Route path="/forja"        element={<Forja />} />
+            <Route index                              element={<Dashboard />} />
+            <Route path="/grimorio"               element={<Grimorio />} />
+            <Route path="/grimorio/:gameLine/:slug" element={<DetalleRegla />} />
+            <Route path="/forja"                  element={<Forja />} />
             <Route path="/narrador"     element={<PantallaNarrador />} />
             <Route path="/cronica/:id"  element={<HubCronica />} />
             <Route path="/bitacora"     element={<BitacoraSesion />} />

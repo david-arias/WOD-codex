@@ -2,24 +2,16 @@
 backend/api/routers/game_rules.py — Consulta y gestión del Grimorio (fuente de verdad).
 
 Endpoints:
-    GET    /gamerules              → Buscar reglas con múltiples filtros
-    GET    /gamerules/{id}         → Obtener regla completa
-    GET    /gamerules/by-name/{name} → Buscar regla por nombre exacto
-    GET    /gamerules/hierarchy/{parent} → Todos los niveles de un poder (ej: Dominar 1-5)
-    POST   /gamerules              → Crear regla (protegido — seed/admin)
-    PATCH  /gamerules/{id}         → Actualizar regla (protegido)
+    GET    /gamerules/                       → Buscar reglas con filtros (paginado)
+    GET    /gamerules/glossary/{game_line}   → Glosario A-Z para el Grimorio (sin paginación)
+    GET    /gamerules/detail/{game_line}/{slug} → Regla completa por game_line + slug
+    GET    /gamerules/hierarchy/{parent}     → Todos los niveles de un poder (ej: Dominar 1-5)
+    GET    /gamerules/{rule_id}              → Obtener regla por UUID
+    POST   /gamerules/                       → Crear regla (seed/admin)
+    PATCH  /gamerules/{rule_id}              → Actualizar regla (protegido)
 
-Acceso:
-    - GET endpoints: accesibles por cualquier usuario autenticado.
-    - POST / PATCH:  requieren `current_user.is_active` (en el futuro un flag `is_admin`).
-      Por ahora cualquier usuario autenticado puede crear reglas para facilitar
-      el seeding inicial. El flag `is_verified` distingue reglas oficiales del seed
-      de reglas creadas por usuarios.
-
-Diseño:
-    Este endpoint es el corazón del Grimorio y del pipeline RAG.
-    El campo `embedding_text` se construye automáticamente en el POST
-    para que el servicio de IA pueda indexarlo directamente en ChromaDB.
+Orden de rutas: las rutas con prefijos específicos (/glossary, /detail, /hierarchy)
+deben declararse ANTES de /{rule_id} para evitar conflictos de matching en FastAPI.
 """
 
 from __future__ import annotations
@@ -159,6 +151,104 @@ async def list_game_rules(
         size=size,
         pages=math.ceil(total / size) if total > 0 else 0,
     )
+
+
+# ─────────────────────────────────────────────────────────────────
+# GET /gamerules/glossary/{game_line} — Glosario A-Z para el Grimorio
+# ─────────────────────────────────────────────────────────────────
+@router.get(
+    "/glossary/{game_line}",
+    response_model=list[GameRuleResponse],
+    summary="Glosario completo de un juego para El Grimorio",
+    description=(
+        "Retorna todas las reglas de una línea de juego ordenadas alfabéticamente. "
+        "Usado por la vista Grimorio.jsx para poblar la enciclopedia A-Z. "
+        "Soporta filtro opcional por categoría. "
+        "Ej: GET /gamerules/glossary/V20?category=discipline"
+    ),
+)
+async def get_glossary(
+    game_line: GameLine,
+    current_user: CurrentUser,
+    db: DBSession,
+    category: Annotated[
+        RuleCategory | None,
+        Query(description="Filtrar por categoría"),
+    ] = None,
+    search: Annotated[
+        str | None,
+        Query(description="Búsqueda textual por nombre"),
+    ] = None,
+) -> list[GameRuleResponse]:
+    query = select(GameRule).where(GameRule.game_line == game_line)
+
+    if category:
+        query = query.where(GameRule.category == category)
+
+    if search:
+        search_term = f"%{search}%"
+        query = query.where(
+            or_(
+                GameRule.name.ilike(search_term),
+                GameRule.name_en.ilike(search_term),
+            )
+        )
+
+    query = query.order_by(GameRule.name.asc())
+    result = await db.execute(query)
+    rules  = result.scalars().all()
+    return [GameRuleResponse.model_validate(r) for r in rules]
+
+
+# ─────────────────────────────────────────────────────────────────
+# GET /gamerules/detail/{game_line}/{slug} — Regla por slug
+# ─────────────────────────────────────────────────────────────────
+@router.get(
+    "/detail/{game_line}/{slug}",
+    response_model=GameRuleResponse,
+    summary="Obtener una regla completa por game_line + slug",
+    description=(
+        "Retorna la regla completa incluyendo system_text (Markdown) "
+        "para la vista de detalle del Grimorio. "
+        "Ej: GET /gamerules/detail/V20/celeridad"
+    ),
+)
+async def get_rule_by_slug(
+    game_line: GameLine,
+    slug: str,
+    current_user: CurrentUser,
+    db: DBSession,
+) -> GameRuleResponse:
+    result = await db.execute(
+        select(GameRule).where(
+            GameRule.game_line == game_line,
+            GameRule.slug      == slug.lower(),
+        )
+    )
+    rule = result.scalar_one_or_none()
+
+    if rule is None:
+        # Fallback: buscar por nombre slugificado (compat. con datos pre-slug)
+        from unicodedata import normalize
+        import re
+        def _slugify(text: str) -> str:
+            text = normalize('NFKD', text).encode('ascii', 'ignore').decode('ascii')
+            text = re.sub(r'[^\w\s-]', '', text.lower())
+            return re.sub(r'[-\s]+', '-', text).strip('-')
+
+        result2 = await db.execute(
+            select(GameRule).where(GameRule.game_line == game_line)
+        )
+        all_rules = result2.scalars().all()
+        rule = next((r for r in all_rules if _slugify(r.name) == slug.lower()), None)
+
+    if rule is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Regla '{slug}' no encontrada para {game_line}",
+        )
+
+    return GameRuleResponse.model_validate(rule)
 
 
 # ─────────────────────────────────────────────────────────────────

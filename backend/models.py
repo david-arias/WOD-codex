@@ -720,6 +720,18 @@ class GameRule(Base):
         ),
     )
 
+    # ── Slug para URL amigable ─────────────────────────────
+    slug: Mapped[str | None] = mapped_column(
+        String(300),
+        nullable=True,
+        index=True,
+        comment=(
+            "URL slug para enrutamiento del Grimorio. "
+            "Ej: 'celeridad', 'camino-de-la-humanidad'. "
+            "Generado automáticamente por el parser de Markdown."
+        ),
+    )
+
     # ── Fuente bibliográfica ───────────────────────────────
     source_book: Mapped[str | None] = mapped_column(
         String(300),
